@@ -48,6 +48,17 @@ class SchemaGuardTest extends TestCase
         $this->as($admin)->postJson('/api/v1/system/roles', ['name' => 'X'])->assertCreated();
     }
 
+    public function test_prazna_baza_znachi_site_migracii_chekaat(): void
+    {
+        // Прво пуштање на Plesk: нема ни табела `migrations`. Порано ова
+        // излегуваше „базата е ажурирана“ и не се нудеше миграција.
+        \Illuminate\Support\Facades\Schema::drop('migrations');
+        SchemaState::flushMemo();
+
+        $this->assertSame(SchemaState::expected(), SchemaState::pending());
+        $this->assertFalse(SchemaState::isCurrent());
+    }
+
     public function test_sostojbata_ja_pokazhuva_zaostanatata_migracija(): void
     {
         $admin = $this->makeSuper();

@@ -63,7 +63,8 @@ class SchemaStatus
     {
         // Две истовремени миграции би тргнале по иста табела и втората би
         // паднала на пола пат. Заклучувањето е поевтино од чистењето потоа.
-        $lock = Cache::lock('schema-migrate', 600);
+        // Заклучувањето е во датотека, не во базата — види SchemaState::store().
+        $lock = SchemaState::store()->lock('schema-migrate', 600);
 
         if (! $lock->get()) {
             return ['ok' => false, 'failed' => false, 'output' => '',

@@ -17,4 +17,8 @@
 
 return [
     'guard' => filter_var(env('SCHEMA_GUARD', true), FILTER_VALIDATE_BOOLEAN),
+
+    // Каде стојат паузата на стражарот и заклучувањето на миграцијата —
+    // НЕ во базата (види SchemaState::store()). Тестовите: array.
+    'store' => env('SCHEMA_STORE', 'file'),
 ];

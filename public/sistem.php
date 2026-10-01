@@ -74,7 +74,9 @@ if ($authorized) {
             }
             $output = $r['output'];
         } elseif ($action === 'admin') {
-            if (! Schema::hasTable('users') || User::exists()) {
+            if (! Schema::hasTable('users')) {
+                $errors[] = 'Прво извршете ги миграциите — уште нема табела за корисници.';
+            } elseif (User::exists()) {
                 $errors[] = 'Првиот администратор веќе постои — понатамошните корисници се прават од апликацијата.';
             } else {
                 $data = Validator::make($_POST, UserRequest::rulesFor(), [], UserRequest::names())->validate();
@@ -82,10 +84,12 @@ if ($authorized) {
                     'name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'],
                     'is_super' => true, 'is_active' => true,
                 ]);
-                $messages[] = 'Главниот администратор е создаден. Најавете се од апликацијата.';
+                $messages[] = 'Главниот администратор е создаден. Сега направете ја фирмата подолу, па најавете се на почетната страница.';
             }
         } elseif ($action === 'firm') {
-            if (! Schema::hasTable('firms') || Firm::exists()) {
+            if (! Schema::hasTable('firms')) {
+                $errors[] = 'Прво извршете ги миграциите — уште нема табела за фирми.';
+            } elseif (Firm::exists()) {
                 $errors[] = 'Фирма веќе постои — понатамошните се прават од апликацијата.';
             } else {
                 $data = Validator::make($_POST, FirmRequest::rulesFor(), ['tax_id.regex' => 'ЕДБ мора да има точно 13 цифри.'], FirmRequest::names())->validate();
@@ -144,9 +148,11 @@ $hasFirms = $authorized && Schema::hasTable('firms') && Firm::exists();
       <tr><td>Извршени миграции</td><td><?= count($status['applied']) ?> од <?= count($status['expected']) ?></td></tr>
       <tr><td>Стражар</td><td><?= $status['guardOn'] ? 'вклучен' : 'ИСКЛУЧЕН (SCHEMA_GUARD=false)' ?></td></tr>
       <?php /* Без тригерите прокнижените налози ги чува само кодот — види LedgerGuard. */ ?>
-      <tr><td>Заштита на книгите во базата</td><td><?= App\Support\LedgerGuard::isInstalled()
+      <tr><td>Заштита на книгите во базата</td><td><?= ! Schema::hasTable('journal_entries')
+          ? '— (се проверува по миграциите)'
+          : (App\Support\LedgerGuard::isInstalled()
           ? 'да (тригери)'
-          : '<b>НЕМА</b> — тригерите не се создадени (на Plesk најчесто треба право SUPER или log_bin_trust_function_creators=1). Прокнижените налози ги чува само кодот.' ?></td></tr>
+          : '<b>НЕМА</b> — тригерите не се создадени (на Plesk најчесто треба право SUPER или log_bin_trust_function_creators=1). Прокнижените налози ги чува само кодот.') ?></td></tr>
       <?php if ($status['error']): ?><tr><td>Грешка</td><td><?= h($status['error']) ?></td></tr><?php endif; ?>
     </table>
   </div>
@@ -191,7 +197,7 @@ $hasFirms = $authorized && Schema::hasTable('firms') && Firm::exists();
   <?php endif; ?>
 
   <?php if ($hasUsers && $hasFirms && ! $status['pending']): ?>
-    <div class="box">Сè е подготвено. Корисниците, улогите и другите фирми се уредуваат од апликацијата (Систем).</div>
+    <div class="box">Сè е подготвено. Пуштете го clear-cache.php, па најавете се на <a href="/">почетната страница</a>.</div>
   <?php endif; ?>
 <?php endif; ?>
 </body>

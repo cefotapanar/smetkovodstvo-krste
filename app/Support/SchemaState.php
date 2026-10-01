@@ -5,6 +5,7 @@ namespace App\Support;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Споредба меѓу миграциите што ги носи КОДОТ и оние што се извршени во БАЗАТА.
@@ -77,6 +78,14 @@ class SchemaState
      */
     public static function applied(?string $connection = null): array
     {
+        // Празна база (прво пуштање) нема ни табела `migrations` — тоа значи
+        // „ништо не е извршено“, не грешка. Како грешка, споредбата паѓаше,
+        // заостанувањето излегуваше празно и sistem.php пишуваше „базата е
+        // ажурирана“ на база без ниедна табела (прво пуштање на Plesk, 0.3.0).
+        if (! Schema::connection($connection)->hasTable(self::table())) {
+            return [];
+        }
+
         $rows = DB::connection($connection)->table(self::table())->pluck('migration')->all();
         $rows = array_map('strval', $rows);
         sort($rows);
@@ -171,12 +180,12 @@ class SchemaState
     public static function pause(int $minutes = 30): void
     {
         $until = now()->addMinutes($minutes);
-        Cache::put(self::PAUSE_KEY, $until->getTimestamp(), $until);
+        self::store()->put(self::PAUSE_KEY, $until->getTimestamp(), $until);
     }
 
     public static function resume(): void
     {
-        Cache::forget(self::PAUSE_KEY);
+        self::store()->forget(self::PAUSE_KEY);
     }
 
     /** Дали стражарот е привремено паузиран (никогаш не фрла). */
@@ -189,12 +198,24 @@ class SchemaState
     public static function pausedUntil(): ?Carbon
     {
         try {
-            $ts = Cache::get(self::PAUSE_KEY);
+            $ts = self::store()->get(self::PAUSE_KEY);
 
             return $ts ? Carbon::createFromTimestamp((int) $ts) : null;
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Паузата и заклучувањето на миграцијата НЕ смеат да живеат во базата:
+     * кешот на апликацијата е во базата (CACHE_STORE=database), а токму
+     * кога базата е празна или на пола миграција тие најмногу требаат.
+     * Првото пуштање на Plesk паѓаше на „cache_locks doesn't exist“.
+     * Стандардно датотека; тестовите — array (config/schema.php).
+     */
+    public static function store(): \Illuminate\Contracts\Cache\Repository
+    {
+        return Cache::store(config('schema.store', 'file'));
     }
 
     /** Само за тестови — да се потроши запаметеното меѓу два случаја. */
