@@ -3,6 +3,8 @@
 namespace App\Actions\System;
 
 use App\Models\Firm;
+use App\Support\ChartOfAccounts;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Нова фирма или измена. Ја викаат API-то (Систем → Фирми) и `public/sistem.php`.
@@ -16,16 +18,21 @@ class SaveFirm
 
     public function run(array $data, ?Firm $firm = null): Firm
     {
-        $firm ??= new Firm(['size' => 'small', 'is_active' => true]);
+        return DB::transaction(function () use ($data, $firm) {
+            $firm ??= new Firm(['size' => 'small', 'is_active' => true]);
 
-        foreach (self::FIELDS as $field) {
-            if (array_key_exists($field, $data)) {
-                $firm->{$field} = $data[$field];
+            foreach (self::FIELDS as $field) {
+                if (array_key_exists($field, $data)) {
+                    $firm->{$field} = $data[$field];
+                }
             }
-        }
 
-        $firm->save();
+            $firm->save();
 
-        return $firm;
+            // Фирма без контен план не може да книжи ниту ред — се прави заедно со неа.
+            ChartOfAccounts::ensure($firm);
+
+            return $firm;
+        });
     }
 }

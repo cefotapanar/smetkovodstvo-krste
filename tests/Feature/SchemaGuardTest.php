@@ -54,6 +54,6 @@ class SchemaGuardTest extends TestCase
         $this->zaostani();
 
         $this->as($admin)->getJson('/api/v1/system/schema')
-            ->assertOk()->assertJsonPath('pending', [SchemaState::head()]);
+            ->assertOk()->assertJsonPath('pending', [SchemaState::head()])->assertJsonPath('db_guard', true);
     }
 }

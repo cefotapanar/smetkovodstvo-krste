@@ -74,6 +74,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422) : null;
         });
 
+        $exceptions->render(function (\App\Exceptions\DocumentLocked $e, Request $r) use ($api) {
+            return $api($r) ? response()->json(['error' => 'locked', 'message' => $e->getMessage()], 409) : null;
+        });
+
+        // Тригер во базата одбил промена на прокнижен налог (`LedgerGuard`).
+        // Ако стигне дотука, кодот промашил некаде — но човекот добива точна
+        // порака и 409, не „Server Error“.
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $r) use ($api) {
+            if (! $api($r) || ! str_contains($e->getMessage(), \App\Support\LedgerGuard::TAG)) {
+                return null;
+            }
+
+            return response()->json(['error' => 'locked', 'message' => 'Прокнижен налог не смее да се менува ниту брише.'], 409);
+        });
+
         $exceptions->render(function (NotFoundHttpException $e, Request $r) use ($api) {
             if (! $api($r)) {
                 return null;

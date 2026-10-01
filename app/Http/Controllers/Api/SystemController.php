@@ -34,6 +34,8 @@ class SystemController extends ApiController
             'guard_on'    => $s['guardOn'],
             'paused_till' => $s['pausedTill']?->toIso8601String(),
             'database'    => $s['database'],
+            // Тригерите што ги чуваат прокнижените налози во самата база (LedgerGuard).
+            'db_guard'    => \App\Support\LedgerGuard::isInstalled(),
         ]);
     }
 

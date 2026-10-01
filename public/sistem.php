@@ -143,6 +143,10 @@ $hasFirms = $authorized && Schema::hasTable('firms') && Firm::exists();
       <tr><td>База</td><td><?= h($status['database']) ?></td></tr>
       <tr><td>Извршени миграции</td><td><?= count($status['applied']) ?> од <?= count($status['expected']) ?></td></tr>
       <tr><td>Стражар</td><td><?= $status['guardOn'] ? 'вклучен' : 'ИСКЛУЧЕН (SCHEMA_GUARD=false)' ?></td></tr>
+      <?php /* Без тригерите прокнижените налози ги чува само кодот — види LedgerGuard. */ ?>
+      <tr><td>Заштита на книгите во базата</td><td><?= App\Support\LedgerGuard::isInstalled()
+          ? 'да (тригери)'
+          : '<b>НЕМА</b> — тригерите не се создадени (на Plesk најчесто треба право SUPER или log_bin_trust_function_creators=1). Прокнижените налози ги чува само кодот.' ?></td></tr>
       <?php if ($status['error']): ?><tr><td>Грешка</td><td><?= h($status['error']) ?></td></tr><?php endif; ?>
     </table>
   </div>
