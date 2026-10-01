@@ -90,6 +90,28 @@ Laravel 12 · PHP 8.2 · MySQL · Plesk · **интерфејс на макед�
 
 ---
 
+## Работна табла на проектот — ПРИВРЕМЕНО
+
+Почетната страница `/` (единствениот веб-екран со сесија): планот + прашања и
+одлуки меѓу сопственикот и сметководителката (ТИА Конто) додека трае изработката.
+
+- **Нова одлука од разговорот или ново прашање → ставка во
+  `database/data/projekt.php`** (нов, стабилен `key`). По `git pull` се појавува
+  сама (`ProjectSync`, кога хешот на датотеката ќе се смени). Одговорите и
+  одлуките внесени на страницата НЕ се газат.
+- Читливиот план за неа: `resources/projekt/plan.md` (наслови `## Име {#id}` —
+  од нив е содржината лево). Табелата „Фази и каде сме“ се ажурира со секоја фаза.
+- Што одговорила: `php artisan projekt:povleci` → `storage/app/projekt-od-serverot.json`
+  (бара `PROJEKT_REMOTE_KEY` локално = `PROJEKT_KEY` на серверот).
+- **Бришење на крајот:** `app/Projekt/`, `resources/views/projekt/`,
+  `resources/projekt/`, `database/data/projekt.php`, `config/projekt.php`, рутите
+  во `routes/web.php` и `routes/console.php`, `tests/Feature/ProjektBoardTest.php`,
+  `EnsureActiveWebUser`, и нова миграција што ги брише `project_items`,
+  `project_comments`, `users.project_side`, `users.project_seen_at`. Ништо од
+  книговодството не зависи од нив.
+
+---
+
 ## Деплој (исто како ЕРП-от)
 
 - **`vendor/` и `bootstrap/cache/packages.php` СЕ во git** — „pull & run“ на

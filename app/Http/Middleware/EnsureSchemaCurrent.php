@@ -26,7 +26,7 @@ class EnsureSchemaCurrent
      * login/logout — инаку додека базата заостанува апликацијата не би можела
      * ниту да се најави за да ЧИТА, а администраторот да ја пушти миграцијата.
      */
-    private const ALWAYS_ALLOW = ['api/v1/login', 'api/v1/logout'];
+    private const ALWAYS_ALLOW = ['api/v1/login', 'api/v1/logout', 'login', 'logout'];
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -53,10 +53,13 @@ class EnsureSchemaCurrent
             return $next($request);
         }
 
-        return response()->json([
-            'error'   => 'schema_outdated',
-            'message' => 'Базата не е ажурирана на верзијата на серверот, па запишувањето е привремено сопрено. Прегледот работи нормално.',
-            'pending' => count($pending),
-        ], 503)->header('Retry-After', '60');
+        $message = 'Базата не е ажурирана на верзијата на серверот, па запишувањето е привремено сопрено. Прегледот работи нормално.';
+
+        // Веб-формата (работната табла) добива обична порака, не JSON.
+        $response = $request->expectsJson()
+            ? response()->json(['error' => 'schema_outdated', 'message' => $message, 'pending' => count($pending)], 503)
+            : response($message.' Администраторот треба да ги пушти миграциите (sistem.php).', 503)->header('Content-Type', 'text/plain; charset=utf-8');
+
+        return $response->header('Retry-After', '60');
     }
 }

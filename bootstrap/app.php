@@ -47,8 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', \App\Http\Middleware\EnsureSchemaCurrent::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\TouchApiToken::class);
 
+        // Веб (само привремената работна табла): истиот стражар на базата.
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureSchemaCurrent::class);
+
         $middleware->alias([
             'active'     => \App\Http\Middleware\EnsureActiveUser::class,
+            'active.web' => \App\Http\Middleware\EnsureActiveWebUser::class,
             'firm'       => \App\Http\Middleware\ResolveFirm::class,
             'permission' => \App\Http\Middleware\EnsurePermission::class,
             'super'      => \App\Http\Middleware\EnsureSuper::class,
